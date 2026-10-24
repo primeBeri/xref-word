@@ -6,7 +6,7 @@ XRef was called RAD·CUT until October 2026. The feature specs and run logs unde
 
 Press a shortcut, fuzzy-search the document's headings in a palette, press Enter, and a live Word cross-reference is inserted at the cursor. XRef brings the two-keystroke linking habit of PKM tools such as Obsidian and Logseq to Word, without locking documents into an add-in.
 
-> **Status:** the MVP for Word on Windows desktop is in its release checks. It is not yet published; to try it, sideload it as below.
+> **Status:** [v0.1.0](https://github.com/primeBeri/xref-word/releases/tag/v0.1.0), the MVP for Word on Windows desktop. See [Install](#install).
 
 ## Why
 
@@ -56,9 +56,26 @@ A custom format is a template of text and placeholders, each of which becomes it
 
 For a heading without a number, the number is left out together with the text that follows it up to the next placeholder (and a bracket opened before it), so "§ Number & Text" gives "§ Heading text".
 
-## Install (sideloading)
+## Install
 
-XRef runs from a local web server on your machine. You need Word for Windows (Microsoft 365), Node.js and npm.
+You need Word for Windows (Microsoft 365). XRef is not in the Office Store yet, so Word loads it from a shared-folder add-in catalogue: a folder on your computer, shared on the network and trusted by Word. Word for Windows has no "Upload My Add-in" option.
+
+1. Create the folder and share it, once, in PowerShell run as administrator:
+
+   ```powershell
+   New-Item -ItemType Directory -Force C:\xref-addins
+   New-SmbShare -Name xref-addins -Path C:\xref-addins -ReadAccess $env:USERNAME
+   ```
+
+2. Download `manifest.xml` from the [latest release](https://github.com/primeBeri/xref-word/releases/latest) (or https://xref.radberi.co.uk/manifest.xml) into `C:\xref-addins`.
+3. In Word: File > Options > Trust Center > Trust Center Settings > Trusted Add-in Catalogs. Add `\\localhost\xref-addins` as the catalogue URL, tick "Show in Menu", click OK and restart Word.
+4. Home > Add-ins > More Add-ins > Shared Folder, choose XRef and click Add. The XRef group appears on the Home tab, and Ctrl+Shift+Y opens the palette.
+
+XRef is served from https://xref.radberi.co.uk, so Word picks up new releases by itself. Replace `manifest.xml` only when a release's notes say so. To remove XRef, delete the manifest from the folder and restart Word.
+
+## Development (sideloading)
+
+To run XRef from a local web server instead, you need Node.js and npm as well.
 
 ```powershell
 git clone <this repository> xref
@@ -68,7 +85,7 @@ npm run certs   # once: a trusted HTTPS certificate for localhost:3000
 npm start       # starts the server and sideloads XRef into Word
 ```
 
-`npm stop` unloads it. Since Word 2609, an add-in sideloaded this way loses its keyboard shortcut on most starts (office-js#6973); the ribbon button still works. Loading the manifest from a shared-folder add-in catalogue does not help either: Word 2609 does not register that copy's shortcuts. See `tests/desktop/README.md`.
+`npm stop` unloads it. Since Word 2609, an add-in sideloaded this way loses its keyboard shortcut on most starts (office-js#6973); the ribbon button still works. See `tests/desktop/README.md`. The development copy has its own add-in Id, so it can stay installed beside a release, but run `npm stop` before using the release: with both loaded, Word shows two XRef groups and both claim Ctrl+Shift+Y.
 
 Known behaviours, such as what happens when a tracked reference is rejected, are listed in [docs/known-behaviours.md](docs/known-behaviours.md).
 
